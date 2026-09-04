@@ -162,6 +162,8 @@ table.data input.narrow{ width:56px; min-width:56px; }
 .gcell{ border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:9px 10px; }
 .week-grid > .gcell:nth-child(8n){ border-right:none; }
 .gcell.head{ background:var(--surface-2); font:700 11px "IBM Plex Mono",monospace; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); border-bottom:2px solid var(--border-strong); display:flex; align-items:center; }
+.gcell.head.day-head{ flex-direction:column; align-items:flex-start; gap:4px; padding:8px 10px; }
+.day-swap-select{ font:600 9.5px "IBM Plex Mono",monospace; text-transform:none; letter-spacing:0; color:var(--ink-faint); border:1px solid var(--border); border-radius:4px; background:var(--bg); padding:2px 3px; cursor:pointer; max-width:100%; }
 .gcell.rowlabel{ background:var(--surface-2); font:700 11px "IBM Plex Mono",monospace; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-dim); display:flex; align-items:center; }
 .meal-cell{ background:var(--surface); min-height:96px; display:flex; flex-direction:column; gap:6px; }
 .meal-cell.free{ background:var(--free-stripe); align-items:center; justify-content:center; text-align:center; }
@@ -178,6 +180,15 @@ table.data input.narrow{ width:56px; min-width:56px; }
 .badge.warn{ background:var(--warn-soft); color:var(--warn); }
 .meal-cell .cellctrl{ margin-top:auto; display:flex; gap:8px; align-items:center; padding-top:4px; flex-wrap:wrap; }
 .meal-cell select{ font-size:10.5px; padding:3px 4px; width:100%; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink-dim); cursor:pointer; }
+.recipe-search{ position:relative; width:100%; }
+.recipe-search input{ width:100%; font-size:10.5px; padding:3px 4px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--ink); }
+.recipe-search input:disabled{ color:var(--ink-faint); cursor:not-allowed; }
+.recipe-search-list{ position:absolute; z-index:20; top:100%; left:0; right:0; margin:2px 0 0; padding:4px; list-style:none; max-height:180px; overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:6px; box-shadow:var(--shadow); }
+.recipe-search-list li{ margin:0; }
+.recipe-search-list button{ display:block; width:100%; text-align:left; background:none; border:none; padding:5px 7px; font-size:11px; color:var(--ink); cursor:pointer; border-radius:4px; white-space:normal; }
+.recipe-search-list button:hover{ background:var(--accent-soft); }
+.recipe-search-list button.current{ font-weight:700; color:var(--accent); }
+.recipe-search-empty{ padding:5px 7px; font-size:11px; color:var(--ink-faint); }
 .ing-mini{ list-style:none; margin:0; padding:0; font:500 11px "IBM Plex Mono",monospace; color:var(--ink-dim); display:flex; flex-direction:column; gap:2px; }
 .ing-mini li{ display:flex; justify-content:space-between; gap:6px; }
 .ing-mini .g{ color:var(--ink-faint); flex-shrink:0; }

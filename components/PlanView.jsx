@@ -1,6 +1,7 @@
 "use client";
 import { Fragment } from "react";
-import { DAYS, MEAL_LABELS, hueColor, rerollMeal, changeMealCategory } from "../lib/data";
+import { DAYS, MEAL_LABELS, hueColor, rerollMeal, changeMealCategory, selectMealRecipe, swapDays } from "../lib/data";
+import RecipeSearchSelect from "./RecipeSearchSelect";
 
 function macroBar(pct) {
   return (
@@ -21,6 +22,12 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
   }
   function handleChangeCategory(day, mt, idx, newCatId) {
     setPlan((p) => changeMealCategory(settings, recipes, p, day, mt, idx, newCatId));
+  }
+  function handleSelectRecipe(day, mt, idx, recipeId) {
+    setPlan((p) => selectMealRecipe(settings, recipes, p, day, mt, idx, recipeId));
+  }
+  function handleSwapDays(dayA, dayB) {
+    setPlan((p) => swapDays(p, dayA, dayB));
   }
 
   const mealRows = ["colazione", "pranzo", "cena"];
@@ -63,7 +70,15 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
           <div className="grid-wrap">
             <div className="week-grid">
               <div className="gcell head" />
-              {DAYS.map((day) => <div className="gcell head" key={day}>{day}</div>)}
+              {DAYS.map((day) => (
+                <div className="gcell head day-head" key={day}>
+                  <span>{day}</span>
+                  <select className="day-swap-select" value="" onChange={(e) => { if (e.target.value) handleSwapDays(day, e.target.value); }}>
+                    <option value="">&harr; scambia</option>
+                    {DAYS.filter((d) => d !== day).map((d) => <option value={d} key={d}>{d}</option>)}
+                  </select>
+                </div>
+              ))}
 
               {mealRows.map((rowKey) => {
                 const mt = rowKey.startsWith("spuntino") ? "spuntino" : rowKey;
@@ -80,8 +95,8 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
                           key={rowKey + "-" + day}
                           day={day} mt={mt} idx={idx} entry={entry}
                           catById={catById} recipeById={recipeById} catHue={catHue}
-                          categories={categories}
-                          onReroll={handleReroll} onChangeCategory={handleChangeCategory}
+                          categories={categories} recipes={recipes}
+                          onReroll={handleReroll} onChangeCategory={handleChangeCategory} onSelectRecipe={handleSelectRecipe}
                         />
                       );
                     })}
@@ -152,7 +167,7 @@ function Stat({ label, value, small }) {
   );
 }
 
-function Cell({ day, mt, idx, entry, catById, recipeById, catHue, categories, onReroll, onChangeCategory }) {
+function Cell({ day, mt, idx, entry, catById, recipeById, catHue, categories, recipes, onReroll, onChangeCategory, onSelectRecipe }) {
   if (!entry) return <div className="gcell meal-cell free"><span className="free-tag">&mdash;</span></div>;
   if (entry.skipped) return <div className="gcell meal-cell skipped"><span className="free-tag">Pasto saltato</span></div>;
   if (entry.free) return <div className="gcell meal-cell free"><span className="free-tag">Pasto libero</span></div>;
@@ -174,6 +189,7 @@ function Cell({ day, mt, idx, entry, catById, recipeById, catHue, categories, on
   const head = (
     <div className="cat-tag"><span className="hue-dot" style={{ background: hueColor(catHue, entry.categoryId, 45) }} />{catName}</div>
   );
+  const poolOptions = recipes.filter((r) => r.categoryId === entry.categoryId && r.meals.includes(mt)).map((r) => ({ id: r.id, name: r.name }));
 
   if (entry.noRecipe) {
     return (
@@ -181,6 +197,7 @@ function Cell({ day, mt, idx, entry, catById, recipeById, catHue, categories, on
         {head}
         <span className="badge warn">Nessuna ricetta</span>
         <div className="empty-note">Aggiungi una ricetta per questa categoria e pasto.</div>
+        <RecipeSearchSelect options={poolOptions} value={null} onSelect={(id) => onSelectRecipe(day, mt, idx, id)} />
         <CatSelect eligibleCats={eligibleCats} value={entry.categoryId} onChange={(v) => onChangeCategory(day, mt, idx, v)} />
       </div>
     );
@@ -208,6 +225,7 @@ function Cell({ day, mt, idx, entry, catById, recipeById, catHue, categories, on
       <div className="cellctrl">
         <button className="linklike" onClick={() => onReroll(day, mt, idx)}>Nuova ricetta</button>
       </div>
+      <RecipeSearchSelect options={poolOptions} value={entry.recipeId} onSelect={(id) => onSelectRecipe(day, mt, idx, id)} />
       <CatSelect eligibleCats={eligibleCats} value={entry.categoryId} onChange={(v) => onChangeCategory(day, mt, idx, v)} />
     </div>
   );
