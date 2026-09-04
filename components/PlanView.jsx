@@ -26,15 +26,16 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
   const mealRows = ["colazione", "pranzo", "cena"];
   for (let i = 0; i < settings.spuntiniPerDay; i++) mealRows.push(`spuntino${i}`);
 
-  let totalKcal = 0, freeCount = 0, plannedCount = 0, inRangeCount = 0;
+  let totalKcal = 0, freeCount = 0, skippedCount = 0, plannedCount = 0, inRangeCount = 0;
   if (plan) {
     plan.days.forEach((d) => d.meals.forEach((m) => {
       if (m.free) { freeCount++; return; }
+      if (m.skipped) { skippedCount++; return; }
       if (m.kcal) { totalKcal += m.kcal; plannedCount++; if (m.inRange) inRangeCount++; }
     }));
   }
   const avgDaily = plan ? Math.round(totalKcal / 7) : 0;
-  const totalSlots = 7 * (3 + settings.spuntiniPerDay);
+  const totalSlots = 7 * (3 + settings.spuntiniPerDay) - skippedCount;
 
   return (
     <>
@@ -96,6 +97,7 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
             <Stat label="Media kcal / giorno" value={avgDaily} small={`kcal (target ${settings.dailyCalories})`} />
             <Stat label="Pasti pianificati" value={plannedCount} small={`su ${totalSlots} totali`} />
             <Stat label="Pasti liberi" value={freeCount} small="nella settimana" />
+            <Stat label="Pasti saltati" value={skippedCount} small="nella settimana" />
             <Stat label="In range macro" value={plannedCount ? Math.round((inRangeCount / plannedCount) * 100) : 0} small="% dei pasti pianificati" />
           </div>
         )}
@@ -152,6 +154,7 @@ function Stat({ label, value, small }) {
 
 function Cell({ day, mt, idx, entry, catById, recipeById, catHue, categories, onReroll, onChangeCategory }) {
   if (!entry) return <div className="gcell meal-cell free"><span className="free-tag">&mdash;</span></div>;
+  if (entry.skipped) return <div className="gcell meal-cell skipped"><span className="free-tag">Pasto saltato</span></div>;
   if (entry.free) return <div className="gcell meal-cell free"><span className="free-tag">Pasto libero</span></div>;
 
   const cat = catById(entry.categoryId);

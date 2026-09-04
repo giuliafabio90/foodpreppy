@@ -8,10 +8,16 @@ export default function SettingsView({ settings, setSettings }) {
   const cols = ["colazione", "pranzo", "cena"];
   for (let i = 0; i < settings.spuntiniPerDay; i++) cols.push(`spuntino${i}`);
 
-  function toggleFreeSlot(key) {
+  // Ogni cella ha tre stati, in ciclo a ogni click:
+  // pianificato (default) -> libero (mangi quello che vuoi) -> saltato (nessun pasto) -> pianificato.
+  function cycleSlot(key) {
     setSettings((s) => {
-      const has = s.freeSlots.includes(key);
-      return { ...s, freeSlots: has ? s.freeSlots.filter((k) => k !== key) : [...s.freeSlots, key] };
+      const skippedSlots = s.skippedSlots || [];
+      const isFree = s.freeSlots.includes(key);
+      const isSkipped = skippedSlots.includes(key);
+      if (!isFree && !isSkipped) return { ...s, freeSlots: [...s.freeSlots, key] };
+      if (isFree) return { ...s, freeSlots: s.freeSlots.filter((k) => k !== key), skippedSlots: [...skippedSlots, key] };
+      return { ...s, skippedSlots: skippedSlots.filter((k) => k !== key) };
     });
   }
 
@@ -51,8 +57,8 @@ export default function SettingsView({ settings, setSettings }) {
       </div>
 
       <div className="panel">
-        <h3>Pasti liberi</h3>
-        <div className="sub">Quanti pasti a settimana vuoi lasciare fuori dallo schema, e in quali slot esatti.</div>
+        <h3>Pasti liberi e saltati</h3>
+        <div className="sub">Clicca una cella per farla ciclare: pianificato &rarr; libero (mangi quello che vuoi, fuori schema) &rarr; saltato (nessun pasto) &rarr; pianificato.</div>
         <label className="field" style={{ maxWidth: 200 }}><span>Obiettivo pasti liberi / settimana</span>
           <input type="number" min="0" max="40" step="1" value={settings.freeMealsTarget}
             onChange={(e) => setSettings((s) => ({ ...s, freeMealsTarget: clamp(parseInt(e.target.value, 10) || 0, 0, 40) }))} />
@@ -70,12 +76,15 @@ export default function SettingsView({ settings, setSettings }) {
                 <div className="picker-rowlabel">{label}</div>
                 {DAYS.map((day) => {
                   const key = `${day}|${mt}|${idx}`;
-                  const on = settings.freeSlots.includes(key);
+                  const isFree = settings.freeSlots.includes(key);
+                  const isSkipped = (settings.skippedSlots || []).includes(key);
+                  const label = isFree ? "Libero" : isSkipped ? "Saltato" : "·";
                   return (
-                    <label className={"picker-cell" + (on ? " on" : "")} key={col + "-" + day}>
-                      <input type="checkbox" checked={on} onChange={() => toggleFreeSlot(key)} />
-                      {on ? "Libero" : "·"}
-                    </label>
+                    <button type="button"
+                      className={"picker-cell" + (isFree ? " on" : "") + (isSkipped ? " off" : "")}
+                      key={col + "-" + day} onClick={() => cycleSlot(key)}>
+                      {label}
+                    </button>
                   );
                 })}
               </Fragment>
@@ -83,7 +92,8 @@ export default function SettingsView({ settings, setSettings }) {
           })}
         </div>
         <div className={"free-counter " + (settings.freeSlots.length === settings.freeMealsTarget ? "match" : "mismatch")}>
-          {settings.freeSlots.length} selezionati su un obiettivo di {settings.freeMealsTarget}
+          {settings.freeSlots.length} liberi selezionati su un obiettivo di {settings.freeMealsTarget}
+          {(settings.skippedSlots || []).length > 0 && <> &middot; {(settings.skippedSlots || []).length} saltati</>}
         </div>
       </div>
     </>
