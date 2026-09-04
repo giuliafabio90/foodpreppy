@@ -6,3 +6,6 @@ out
 *.log
 dev.log
 dev.err.log
+
+.vercel
+.env*
