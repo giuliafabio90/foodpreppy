@@ -4,6 +4,17 @@ import { DAYS, MEAL_TYPES, MEAL_LABELS, clamp } from "../lib/data";
 
 export default function SettingsView({ settings, setSettings }) {
   const splitTotal = MEAL_TYPES.reduce((s, mt) => s + (settings.mealSplit[mt] || 0), 0);
+  const members = settings.members || [];
+
+  function addMember() {
+    setSettings((s) => ({ ...s, members: [...(s.members || []), { id: "m-" + Date.now(), name: "", dailyCalories: 2000 }] }));
+  }
+  function updateMember(id, patch) {
+    setSettings((s) => ({ ...s, members: (s.members || []).map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
+  }
+  function removeMember(id) {
+    setSettings((s) => ({ ...s, members: (s.members || []).filter((m) => m.id !== id) }));
+  }
 
   const cols = ["colazione", "pranzo", "cena"];
   for (let i = 0; i < settings.spuntiniPerDay; i++) cols.push(`spuntino${i}`);
@@ -27,6 +38,9 @@ export default function SettingsView({ settings, setSettings }) {
         <h3>Obiettivo energetico</h3>
         <div className="sub">Il fabbisogno calorico giornaliero e come ripartirlo tra i pasti della giornata.</div>
         <div className="field-grid">
+          <label className="field"><span>Il tuo nome</span>
+            <input type="text" value={settings.ownerName || ""} onChange={(e) => setSettings((s) => ({ ...s, ownerName: e.target.value }))} />
+          </label>
           <label className="field"><span>Calorie giornaliere</span>
             <div className="suffix-wrap">
               <input type="number" min="800" max="6000" step="10" value={settings.dailyCalories}
@@ -95,6 +109,29 @@ export default function SettingsView({ settings, setSettings }) {
           {settings.freeSlots.length} liberi selezionati su un obiettivo di {settings.freeMealsTarget}
           {(settings.skippedSlots || []).length > 0 && <> &middot; {(settings.skippedSlots || []).length} saltati</>}
         </div>
+      </div>
+
+      <div className="panel">
+        <h3>Famiglia</h3>
+        <div className="sub">Persone per cui pianifichi insieme a te: condividono lo stesso piano settimanale (stessa categoria e ricetta per ogni pasto), ma le quantità degli ingredienti si ricalibrano sul target calorico di ciascuna. Le trovi come schede nella scheda Piano settimanale.</div>
+        {members.length > 0 && (
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="data">
+              <thead><tr><th>Nome</th><th>Calorie giornaliere</th><th /></tr></thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id}>
+                    <td><input type="text" placeholder="Nome" value={m.name} onChange={(e) => updateMember(m.id, { name: e.target.value })} /></td>
+                    <td><input type="number" className="narrow" min="800" max="6000" step="10" value={m.dailyCalories}
+                      onChange={(e) => updateMember(m.id, { dailyCalories: clamp(parseInt(e.target.value, 10) || 0, 800, 6000) })} /></td>
+                    <td className="row-actions"><button className="linklike" onClick={() => removeMember(m.id)}>Rimuovi</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <button className="btn small ghost" onClick={addMember}>+ Aggiungi un membro</button>
       </div>
     </>
   );

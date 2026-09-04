@@ -7,6 +7,7 @@ import CategoriesView from "./CategoriesView";
 import MacrosView from "./MacrosView";
 import RecipesView from "./RecipesView";
 import PlanView from "./PlanView";
+import OnboardingModal from "./OnboardingModal";
 
 const TABS = [
   { key: "settings", label: "Impostazioni", idx: "01" },
@@ -121,6 +122,7 @@ function AuthedApp() {
   const [plan, setPlan] = useState(null);
   const [history, setHistory] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved | error
   const saveTimer = useRef(null);
 
@@ -128,6 +130,7 @@ function AuthedApp() {
   // bloccata su una schermata di caricamento finche' non arriva, cosi non
   // c'e' finestra in cui una modifica dell'utente possa essere sovrascritta
   // dal fetch (stessa logica del vecchio localStorage, solo asincrona).
+  // Nessun dato salvato = account appena registrato: prima l'onboarding.
   useEffect(() => {
     let cancelled = false;
     fetch("/api/user-data")
@@ -141,6 +144,8 @@ function AuthedApp() {
           if (d.recipes) setRecipes(d.recipes);
           if (d.plan !== undefined) setPlan(d.plan);
           if (d.history) setHistory(d.history);
+        } else {
+          setNeedsOnboarding(true);
         }
       })
       .catch(() => {})
@@ -148,17 +153,22 @@ function AuthedApp() {
     return () => { cancelled = true; };
   }, []);
 
-  // Primo utilizzo in assoluto per questo account (nessun dato salvato):
-  // genera subito uno schema di partenza invece di un pannello vuoto.
+  function handleOnboardingComplete({ ownerName, dailyCalories, members }) {
+    setSettings((s) => ({ ...s, ownerName, dailyCalories, members }));
+    setNeedsOnboarding(false);
+  }
+
+  // Genera subito uno schema di partenza appena i dati sono pronti e
+  // l'eventuale onboarding e' stato completato, invece di un pannello vuoto.
   useEffect(() => {
-    if (dataLoaded && plan === null) setPlan(generatePlan(settings, categories, recipes));
+    if (dataLoaded && !needsOnboarding && plan === null) setPlan(generatePlan(settings, categories, recipes));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataLoaded]);
+  }, [dataLoaded, needsOnboarding]);
 
   // Salvataggio sul server, con un breve debounce per non spedire una
   // richiesta ad ogni singolo carattere digitato.
   useEffect(() => {
-    if (!dataLoaded) return;
+    if (!dataLoaded || needsOnboarding) return;
     setSaveStatus("saving");
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -172,7 +182,7 @@ function AuthedApp() {
     }, 700);
     return () => clearTimeout(saveTimer.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataLoaded, settings, categories, recipes, plan, history]);
+  }, [dataLoaded, needsOnboarding, settings, categories, recipes, plan, history]);
 
   const catHue = useMemo(() => assignHues(categories), [categories]);
 
@@ -223,6 +233,7 @@ function AuthedApp() {
           />
         )}
       </main>
+      {needsOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
     </div>
   );
 }

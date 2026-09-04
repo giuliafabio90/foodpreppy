@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useState } from "react";
-import { DAYS, MEAL_LABELS, hueColor, rerollMeal, selectMealRecipe, swapDays, ingredientsGrouped } from "../lib/data";
+import { DAYS, MEAL_LABELS, hueColor, rerollMeal, selectMealRecipe, swapDays, ingredientsGrouped, planForCalories } from "../lib/data";
 import MealPickerModal from "./MealPickerModal";
 import RecipeDetailModal from "./RecipeDetailModal";
 
@@ -17,7 +17,14 @@ function macroBar(pct) {
 export default function PlanView({ settings, categories, recipes, setRecipes, plan, setPlan, history, catHue, onRegenerate, onSaveToHistory }) {
   const [picker, setPicker] = useState(null); // {day, mt, idx} | null
   const [openRecipeId, setOpenRecipeId] = useState(null);
+  const [memberId, setMemberId] = useState(null); // null = titolare dell'account
   const groups = ingredientsGrouped(categories);
+  const members = settings.members || [];
+  const selectedMember = memberId ? members.find((m) => m.id === memberId) : null;
+  const viewCalories = selectedMember ? selectedMember.dailyCalories : settings.dailyCalories;
+  // Stessa struttura del piano (categoria/ricetta per pasto), quantita
+  // ricalcolate per la persona selezionata: non tocca il piano reale.
+  const viewPlan = selectedMember ? planForCalories(plan, settings, recipes, selectedMember.dailyCalories) : plan;
 
   function catById(id) { return categories.find((c) => c.id === id); }
   function recipeById(id) { return recipes.find((r) => r.id === id); }
@@ -38,14 +45,14 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
   for (let i = 0; i < settings.spuntiniPerDay; i++) mealRows.push(`spuntino${i}`);
 
   let totalKcal = 0, freeCount = 0, skippedCount = 0, plannedCount = 0, inRangeCount = 0;
-  if (plan) {
-    plan.days.forEach((d) => d.meals.forEach((m) => {
+  if (viewPlan) {
+    viewPlan.days.forEach((d) => d.meals.forEach((m) => {
       if (m.free) { freeCount++; return; }
       if (m.skipped) { skippedCount++; return; }
       if (m.kcal) { totalKcal += m.kcal; plannedCount++; if (m.inRange) inRangeCount++; }
     }));
   }
-  const avgDaily = plan ? Math.round(totalKcal / 7) : 0;
+  const avgDaily = viewPlan ? Math.round(totalKcal / 7) : 0;
   const totalSlots = 7 * (3 + settings.spuntiniPerDay) - skippedCount;
 
   const pickerEntry = picker && plan
@@ -66,6 +73,19 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
             </span>
           )}
         </div>
+
+        {members.length > 0 && (
+          <div className="member-switch">
+            <button className={"member-chip" + (!memberId ? " active" : "")} onClick={() => setMemberId(null)}>
+              {settings.ownerName || "Tu"} <span className="member-kcal">{settings.dailyCalories} kcal</span>
+            </button>
+            {members.map((m) => (
+              <button key={m.id} className={"member-chip" + (memberId === m.id ? " active" : "")} onClick={() => setMemberId(m.id)}>
+                {m.name} <span className="member-kcal">{m.dailyCalories} kcal</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {plan && plan.warnings && plan.warnings.length > 0 && (
           <div className="warn-box">
@@ -98,7 +118,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
                   <Fragment key={rowKey}>
                     <div className="gcell rowlabel">{label}</div>
                     {DAYS.map((day) => {
-                      const dayObj = plan.days.find((d) => d.day === day);
+                      const dayObj = viewPlan.days.find((d) => d.day === day);
                       const entry = dayObj ? dayObj.meals.find((m) => m.mealType === mt && m.idx === idx) : null;
                       return (
                         <Cell
@@ -120,7 +140,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
 
         {plan && (
           <div className="stat-row">
-            <Stat label="Media kcal / giorno" value={avgDaily} small={`kcal (target ${settings.dailyCalories})`} />
+            <Stat label="Media kcal / giorno" value={avgDaily} small={`kcal (target ${viewCalories})`} />
             <Stat label="Pasti pianificati" value={plannedCount} small={`su ${totalSlots} totali`} />
             <Stat label="Pasti liberi" value={freeCount} small="nella settimana" />
             <Stat label="Pasti saltati" value={skippedCount} small="nella settimana" />
