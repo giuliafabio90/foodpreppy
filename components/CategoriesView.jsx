@@ -1,8 +1,8 @@
 "use client";
-import { MEAL_TYPES, clamp, hueColor } from "../lib/data";
+import { MEAL_TYPES, MEAL_LABELS, clamp, hueColor } from "../lib/data";
 import ConfirmButton from "./ConfirmButton";
 
-export default function CategoriesView({ categories, setCategories, catHue }) {
+export default function CategoriesView({ categories, setCategories, catHue, t }) {
   function update(id, patch) {
     setCategories((cats) => cats.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   }
@@ -15,7 +15,7 @@ export default function CategoriesView({ categories, setCategories, catHue }) {
   }
   function addCategory() {
     const id = "cat-" + Date.now();
-    setCategories((cats) => [...cats, { id, name: "Nuova categoria", weeklyFrequency: 1, meals: ["pranzo", "cena"] }]);
+    setCategories((cats) => [...cats, { id, name: t("Nuova categoria"), weeklyFrequency: 1, meals: ["pranzo", "cena"] }]);
   }
   function remove(id) {
     setCategories((cats) => cats.filter((c) => c.id !== id));
@@ -23,11 +23,11 @@ export default function CategoriesView({ categories, setCategories, catHue }) {
 
   return (
     <div className="panel">
-      <h3>Categorie alimentari</h3>
-      <div className="sub">Quante volte a settimana vuoi ciascuna categoria e in quali pasti puo comparire. Frequenza 0 = disponibile ma non pianificata automaticamente.</div>
+      <h3>{t("Categorie alimentari")}</h3>
+      <div className="sub">{t("Quante volte a settimana vuoi ciascuna categoria e in quali pasti puo comparire. Frequenza 0 = disponibile ma non pianificata automaticamente.")}</div>
       <div className="table-wrap">
         <table className="data">
-          <thead><tr><th>Categoria</th><th>Volte / sett.</th><th>Colazione</th><th>Pranzo</th><th>Cena</th><th>Spuntino</th><th /></tr></thead>
+          <thead><tr><th>{t("Categoria")}</th><th>{t("Volte / sett.")}</th>{MEAL_TYPES.map((mt) => <th key={mt}>{t(MEAL_LABELS[mt])}</th>)}<th /></tr></thead>
           <tbody>
             {categories.map((cat) => (
               <tr key={cat.id}>
@@ -44,13 +44,13 @@ export default function CategoriesView({ categories, setCategories, catHue }) {
                 {MEAL_TYPES.map((mt) => (
                   <td key={mt}><input type="checkbox" checked={cat.meals.includes(mt)} onChange={() => toggleMeal(cat.id, mt)} /></td>
                 ))}
-                <td className="row-actions"><ConfirmButton onConfirm={() => remove(cat.id)} /></td>
+                <td className="row-actions"><ConfirmButton onConfirm={() => remove(cat.id)} t={t} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div style={{ marginTop: 12 }}><button className="btn small" onClick={addCategory}>+ Nuova categoria</button></div>
+      <div style={{ marginTop: 12 }}><button className="btn small" onClick={addCategory}>{t("+ Nuova categoria")}</button></div>
     </div>
   );
 }

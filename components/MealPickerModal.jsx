@@ -10,7 +10,7 @@ function normalize(s) {
 // Popup di selezione manuale per un pasto: si sceglie una categoria (di
 // default quella attuale della cella, ma cambiabile) e poi una ricetta
 // specifica tra quelle di quella categoria compatibili con il pasto.
-export default function MealPickerModal({ mt, mealLabel, currentCategoryId, currentRecipeId, categories, recipes, catHue, onPick, onClose }) {
+export default function MealPickerModal({ mt, mealLabel, currentCategoryId, currentRecipeId, categories, recipes, catHue, onPick, onClose, t }) {
   const eligibleCats = categories.filter((c) => c.meals.includes(mt));
   const [filterCat, setFilterCat] = useState(currentCategoryId || "");
   const [query, setQuery] = useState("");
@@ -21,23 +21,23 @@ export default function MealPickerModal({ mt, mealLabel, currentCategoryId, curr
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3>Selezione manuale &mdash; {mealLabel}</h3>
-        <div className="sub">Scegli una categoria (o lascia &quot;Tutte&quot;) e poi la ricetta da usare per questo pasto.</div>
+        <h3>{t("Selezione manuale — {m}", { m: mealLabel })}</h3>
+        <div className="sub">{t("Scegli una categoria (o lascia \"Tutte\") e poi la ricetta da usare per questo pasto.")}</div>
 
         <div className="field-grid" style={{ marginBottom: 14 }}>
-          <label className="field"><span>Categoria</span>
+          <label className="field"><span>{t("Categoria")}</span>
             <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-              <option value="">Tutte le categorie</option>
+              <option value="">{t("Tutte le categorie")}</option>
               {eligibleCats.map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}
             </select>
           </label>
-          <label className="field"><span>Cerca per nome</span>
-            <input type="text" placeholder="Digita per cercare…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <label className="field"><span>{t("Cerca per nome")}</span>
+            <input type="text" placeholder={t("Digita per cercare…")} value={query} onChange={(e) => setQuery(e.target.value)} />
           </label>
         </div>
 
         <ul className="picker-list">
-          {filtered.length === 0 && <li className="recipe-search-empty">Nessuna ricetta disponibile in questa categoria per {mealLabel.toLowerCase()}.</li>}
+          {filtered.length === 0 && <li className="recipe-search-empty">{t("Nessuna ricetta disponibile in questa categoria per {m}.", { m: mealLabel.toLowerCase() })}</li>}
           {filtered.map((r) => (
             <li key={r.id}>
               <button type="button" className={r.id === currentRecipeId ? "current" : ""} onClick={() => onPick(r.id)}>
@@ -50,7 +50,7 @@ export default function MealPickerModal({ mt, mealLabel, currentCategoryId, curr
         </ul>
 
         <div className="modal-actions">
-          <button className="btn ghost" onClick={onClose}>Annulla</button>
+          <button className="btn ghost" onClick={onClose}>{t("Annulla")}</button>
         </div>
       </div>
     </div>

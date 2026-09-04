@@ -7,7 +7,7 @@ import IngredientTable from "./IngredientTable";
 // (click sul nome nella lista per categoria) sia dal Piano settimanale
 // (click sul nome ricetta in una cella) — stesso componente, stesso
 // comportamento in entrambi i posti.
-export default function RecipeDetailModal({ recipe, categories, groups, setRecipes, onClose }) {
+export default function RecipeDetailModal({ recipe, categories, groups, setRecipes, onClose, t }) {
   if (!recipe) return null;
   const macros = computeRecipeMacros(recipe);
   const pct = macroPctOf(macros);
@@ -28,10 +28,10 @@ export default function RecipeDetailModal({ recipe, categories, groups, setRecip
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="field-grid" style={{ marginBottom: 16 }}>
-          <label className="field"><span>Nome ricetta</span>
+          <label className="field"><span>{t("Nome ricetta")}</span>
             <input type="text" value={recipe.name} onChange={(e) => update({ name: e.target.value })} />
           </label>
-          <label className="field"><span>Categoria alimentare</span>
+          <label className="field"><span>{t("Categoria alimentare")}</span>
             <select value={recipe.categoryId} onChange={(e) => update({ categoryId: e.target.value })}>
               {categories.map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}
             </select>
@@ -39,22 +39,22 @@ export default function RecipeDetailModal({ recipe, categories, groups, setRecip
         </div>
 
         <div className="field-grid" style={{ marginBottom: 16 }}>
-          <label className="field"><span>Link ricetta esterna</span>
+          <label className="field"><span>{t("Link ricetta esterna")}</span>
             <input type="url" placeholder="https://…" value={recipe.link || ""} onChange={(e) => update({ link: e.target.value })} />
           </label>
-          <label className="field"><span>Pasti</span>
+          <label className="field"><span>{t("Pasti")}</span>
             <div className="chk-group" style={{ marginTop: 8 }}>
               {MEAL_TYPES.map((mt) => (
-                <label key={mt} title={MEAL_LABELS[mt]}>
-                  <input type="checkbox" checked={recipe.meals.includes(mt)} onChange={() => toggleMeal(mt)} /> {MEAL_SHORT[mt]}
+                <label key={mt} title={t(MEAL_LABELS[mt])}>
+                  <input type="checkbox" checked={recipe.meals.includes(mt)} onChange={() => toggleMeal(mt)} /> {t(MEAL_SHORT[mt])}
                 </label>
               ))}
             </div>
           </label>
         </div>
-        {recipe.link && <a href={recipe.link} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginBottom: 16 }}>Apri ricetta originale &#8599;</a>}
+        {recipe.link && <a href={recipe.link} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginBottom: 16 }}>{t("Apri ricetta originale ↗")}</a>}
 
-        <IngredientTable ingredients={recipe.ingredients || []} groups={groups} showLock
+        <IngredientTable ingredients={recipe.ingredients || []} groups={groups} showLock t={t}
           onChange={(ings) => update({ ingredients: ings })} />
 
         <div className="rc-summary">
@@ -66,12 +66,12 @@ export default function RecipeDetailModal({ recipe, categories, groups, setRecip
             </div>
           </div>
           <div className="totals num">
-            {round1(macros.kcal)} kcal totali porzione &middot; P {round1(macros.protein)}g &middot; C {round1(macros.carbs)}g &middot; G {round1(macros.fat)}g
+            {t("{n} kcal totali porzione · P {p}g · C {c}g · G {f}g", { n: round1(macros.kcal), p: round1(macros.protein), c: round1(macros.carbs), f: round1(macros.fat) })}
           </div>
         </div>
 
         <label className="field" style={{ margin: "16px 0" }}>
-          <span>Preparazione (un passaggio per riga)</span>
+          <span>{t("Preparazione (un passaggio per riga)")}</span>
           <textarea rows={5} value={(recipe.steps || []).join("\n")}
             onChange={(e) => update({ steps: e.target.value.split("\n") })} />
         </label>
@@ -82,10 +82,10 @@ export default function RecipeDetailModal({ recipe, categories, groups, setRecip
         )}
 
         <div className="modal-actions" style={{ justifyContent: "space-between" }}>
-          <ConfirmButton onConfirm={remove}>Elimina ricetta</ConfirmButton>
+          <ConfirmButton onConfirm={remove} t={t}>{t("Elimina ricetta")}</ConfirmButton>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn ghost" onClick={() => window.print()}>Stampa</button>
-            <button className="btn ghost" onClick={onClose}>Chiudi</button>
+            <button className="btn ghost" onClick={() => window.print()}>{t("Stampa")}</button>
+            <button className="btn ghost" onClick={onClose}>{t("Chiudi")}</button>
           </div>
         </div>
       </div>

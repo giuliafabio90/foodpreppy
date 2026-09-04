@@ -6,7 +6,7 @@ import { INGREDIENT_DB, round1 } from "../lib/data";
 // con calorie/macro calcolate live. La spunta "Fisso" marca un ingrediente
 // da NON toccare quando si ricalibra la porzione: il ricalcolo scala solo
 // gli ingredienti non fissi per centrare il target calorico.
-export default function IngredientTable({ ingredients, groups, onChange, showSource = false, showLock = false }) {
+export default function IngredientTable({ ingredients, groups, onChange, showSource = false, showLock = false, t = (s) => s }) {
   function update(idx, patch) {
     onChange(ingredients.map((ing, i) => (i === idx ? { ...ing, ...patch } : ing)));
   }
@@ -25,15 +25,15 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
         <table className="ing-table">
           <thead>
             <tr>
-              {showSource && <th>Testo letto dal sito</th>}
-              <th>Ingrediente</th><th>Peso (g)</th><th>Kcal</th><th>Prot g</th><th>Carb g</th><th>Grassi g</th>
-              {showLock && <th title="Non scalare questo ingrediente quando si ricalibra">Fisso</th>}
+              {showSource && <th>{t("Testo letto dal sito")}</th>}
+              <th>{t("Ingrediente")}</th><th>{t("Peso (g)")}</th><th>{t("Kcal")}</th><th>{t("Prot g")}</th><th>{t("Carb g")}</th><th>{t("Grassi g")}</th>
+              {showLock && <th title={t("Non scalare questo ingrediente quando si ricalibra")}>{t("Fisso")}</th>}
               <th />
             </tr>
           </thead>
           <tbody>
             {ingredients.length === 0 && (
-              <tr><td colSpan={colSpan} className="empty-note">Nessun ingrediente. Aggiungine uno.</td></tr>
+              <tr><td colSpan={colSpan} className="empty-note">{t("Nessun ingrediente. Aggiungine uno.")}</td></tr>
             )}
             {ingredients.map((ing, idx) => {
               const def = INGREDIENT_DB.find((i) => i.id === ing.ingredientId);
@@ -44,7 +44,7 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
                   {showSource && <td className="empty-note" style={{ maxWidth: 180 }}>{ing.sourceText || ""}</td>}
                   <td>
                     <select value={ing.ingredientId || ""} onChange={(e) => update(idx, { ingredientId: e.target.value })}>
-                      <option value="">{unmatched ? "— non riconosciuto: scegli —" : "— nessuno —"}</option>
+                      <option value="">{unmatched ? t("— non riconosciuto: scegli —") : t("— nessuno —")}</option>
                       {groups.map((g) => (
                         <optgroup label={g.label} key={g.categoryId}>
                           {g.items.map((it) => <option value={it.id} key={it.id}>{it.name}</option>)}
@@ -60,7 +60,7 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
                   <td className="mono">{def ? round1(def.fat100 * f) : 0}</td>
                   {showLock && (
                     <td style={{ textAlign: "center" }}>
-                      <input type="checkbox" checked={!!ing.locked} title="Mantieni fisso in fase di ricalibro"
+                      <input type="checkbox" checked={!!ing.locked} title={t("Mantieni fisso in fase di ricalibro")}
                         onChange={(e) => update(idx, { locked: e.target.checked })} />
                     </td>
                   )}
@@ -71,7 +71,7 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
           </tbody>
         </table>
       </div>
-      <button className="btn small ghost" style={{ marginTop: 8 }} onClick={add}>+ Ingrediente</button>
+      <button className="btn small ghost" style={{ marginTop: 8 }} onClick={add}>{t("+ Ingrediente")}</button>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { SessionProvider, useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_SETTINGS, DEFAULT_CATEGORIES, EXAMPLE_RECIPES, generatePlan, assignHues } from "../lib/data";
+import { makeT } from "../lib/i18n";
 import SettingsView from "./SettingsView";
 import CategoriesView from "./CategoriesView";
 import MacrosView from "./MacrosView";
@@ -16,11 +17,6 @@ const TABS = [
   { key: "recipes", label: "Ricette", idx: "04" },
   { key: "plan", label: "Piano settimanale", idx: "05" },
 ];
-
-const TITLES = {
-  settings: "Impostazioni", categories: "Categorie", macros: "Macro per pasto",
-  recipes: "Ricette", plan: "Piano settimanale",
-};
 
 export default function App() {
   return (
@@ -125,6 +121,7 @@ function AuthedApp() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved | error
   const saveTimer = useRef(null);
+  const t = useMemo(() => makeT(settings.language), [settings.language]);
 
   // Primo caricamento: legge il blob salvato per questo utente. La UI resta
   // bloccata su una schermata di caricamento finche' non arriva, cosi non
@@ -161,7 +158,7 @@ function AuthedApp() {
   // Genera subito uno schema di partenza appena i dati sono pronti e
   // l'eventuale onboarding e' stato completato, invece di un pannello vuoto.
   useEffect(() => {
-    if (dataLoaded && !needsOnboarding && plan === null) setPlan(generatePlan(settings, categories, recipes));
+    if (dataLoaded && !needsOnboarding && plan === null) setPlan(generatePlan(settings, categories, recipes, t));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataLoaded, needsOnboarding]);
 
@@ -185,55 +182,65 @@ function AuthedApp() {
   }, [dataLoaded, needsOnboarding, settings, categories, recipes, plan, history]);
 
   const catHue = useMemo(() => assignHues(categories), [categories]);
+  const titles = {
+    settings: t("Impostazioni"), categories: t("Categorie"), macros: t("Macro per pasto"),
+    recipes: t("Ricette"), plan: t("Piano settimanale"),
+  };
 
   function regenerate() {
-    setPlan(generatePlan(settings, categories, recipes));
+    setPlan(generatePlan(settings, categories, recipes, t));
   }
   function saveToHistory() {
     if (!plan) return;
     setHistory((h) => (h[0] && h[0].createdAt === plan.createdAt ? h : [plan, ...h]).slice(0, 12));
   }
+  function toggleLanguage() {
+    setSettings((s) => ({ ...s, language: s.language === "en" ? "it" : "en" }));
+  }
 
   if (!dataLoaded) return <CenterScreen text="Caricamento dati…" />;
 
-  const saveLabel = saveStatus === "saving" ? "Salvataggio…" : saveStatus === "error" ? "Errore di salvataggio" : "Sincronizzato";
+  const saveLabel = saveStatus === "saving" ? t("Salvataggio…") : saveStatus === "error" ? t("Errore di salvataggio") : t("Sincronizzato");
 
   return (
     <div className="app">
       <nav className="tabs">
         <div className="brand">
-          <div className="kicker">Nutrizione &middot; Ricette</div>
-          <h1>Tabella<br />Settimanale</h1>
+          <div className="kicker">{t("Nutrizione · Ricette")}</div>
+          <h1>{t("Tabella")}<br />{t("Settimanale")}</h1>
         </div>
-        {TABS.map((t) => (
-          <button key={t.key} className={"tab-btn" + (tab === t.key ? " active" : "")} onClick={() => setTab(t.key)}>
-            <span className="idx">{t.idx}</span> {t.label}
+        {TABS.map((tb) => (
+          <button key={tb.key} className={"tab-btn" + (tab === tb.key ? " active" : "")} onClick={() => setTab(tb.key)}>
+            <span className="idx">{tb.idx}</span> {t(tb.label)}
           </button>
         ))}
+        <button className="lang-toggle" onClick={toggleLanguage} title="Italiano / English">
+          {settings.language === "en" ? "EN" : "IT"}
+        </button>
       </nav>
       <main>
         <div className="topbar">
-          <h2>{TITLES[tab]}</h2>
+          <h2>{titles[tab]}</h2>
           <div className="savestate">
             <span className={"dot" + (saveStatus === "error" ? " error" : "")} />
             <span>{session && session.user ? session.user.email : ""} &middot; {saveLabel}</span>
-            <button className="linklike" onClick={() => signOut()}>Esci</button>
+            <button className="linklike" onClick={() => signOut()}>{t("Esci")}</button>
           </div>
         </div>
 
-        {tab === "settings" && <SettingsView settings={settings} setSettings={setSettings} />}
-        {tab === "categories" && <CategoriesView categories={categories} setCategories={setCategories} catHue={catHue} />}
-        {tab === "macros" && <MacrosView settings={settings} setSettings={setSettings} />}
-        {tab === "recipes" && <RecipesView settings={settings} categories={categories} recipes={recipes} setRecipes={setRecipes} catHue={catHue} />}
+        {tab === "settings" && <SettingsView settings={settings} setSettings={setSettings} t={t} />}
+        {tab === "categories" && <CategoriesView categories={categories} setCategories={setCategories} catHue={catHue} t={t} />}
+        {tab === "macros" && <MacrosView settings={settings} setSettings={setSettings} t={t} />}
+        {tab === "recipes" && <RecipesView settings={settings} categories={categories} recipes={recipes} setRecipes={setRecipes} catHue={catHue} t={t} />}
         {tab === "plan" && (
           <PlanView
             settings={settings} categories={categories} recipes={recipes} setRecipes={setRecipes}
             plan={plan} setPlan={setPlan} history={history}
-            catHue={catHue} onRegenerate={regenerate} onSaveToHistory={saveToHistory}
+            catHue={catHue} onRegenerate={regenerate} onSaveToHistory={saveToHistory} t={t}
           />
         )}
       </main>
-      {needsOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
+      {needsOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} t={t} />}
     </div>
   );
 }

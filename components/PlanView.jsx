@@ -14,7 +14,7 @@ function macroBar(pct) {
   );
 }
 
-export default function PlanView({ settings, categories, recipes, setRecipes, plan, setPlan, history, catHue, onRegenerate, onSaveToHistory }) {
+export default function PlanView({ settings, categories, recipes, setRecipes, plan, setPlan, history, catHue, onRegenerate, onSaveToHistory, t }) {
   const [picker, setPicker] = useState(null); // {day, mt, idx} | null
   const [openRecipeId, setOpenRecipeId] = useState(null);
   const [memberId, setMemberId] = useState(null); // null = titolare dell'account
@@ -22,6 +22,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
   const members = settings.members || [];
   const selectedMember = memberId ? members.find((m) => m.id === memberId) : null;
   const viewCalories = selectedMember ? selectedMember.dailyCalories : settings.dailyCalories;
+  const locale = settings.language === "en" ? "en-US" : "it-IT";
   // Stessa struttura del piano (categoria/ricetta per pasto), quantita
   // ricalcolate per la persona selezionata: non tocca il piano reale.
   const viewPlan = selectedMember ? planForCalories(plan, settings, recipes, selectedMember.dailyCalories) : plan;
@@ -63,13 +64,15 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
     <>
       <div className="panel">
         <div className="plan-actions">
-          <button className="btn primary" onClick={onRegenerate}>Genera nuovo piano</button>
-          <button className="btn ghost" disabled={!plan} onClick={onSaveToHistory}>Salva piano</button>
-          <button className="btn ghost" disabled={!plan} onClick={() => window.print()}>Stampa</button>
+          <button className="btn primary" onClick={onRegenerate}>{t("Genera nuovo piano")}</button>
+          <button className="btn ghost" disabled={!plan} onClick={onSaveToHistory}>{t("Salva piano")}</button>
+          <button className="btn ghost" disabled={!plan} onClick={() => window.print()}>{t("Stampa")}</button>
           {plan && plan.createdAt && (
             <span className="plan-meta">
-              Generato il {new Date(plan.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}{" "}
-              alle {new Date(plan.createdAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+              {t("Generato il {d} alle {t}", {
+                d: new Date(plan.createdAt).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" }),
+                t: new Date(plan.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
+              })}
             </span>
           )}
         </div>
@@ -77,7 +80,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
         {members.length > 0 && (
           <div className="member-switch">
             <button className={"member-chip" + (!memberId ? " active" : "")} onClick={() => setMemberId(null)}>
-              {settings.ownerName || "Tu"} <span className="member-kcal">{settings.dailyCalories} kcal</span>
+              {settings.ownerName || t("Tu")} <span className="member-kcal">{settings.dailyCalories} kcal</span>
             </button>
             {members.map((m) => (
               <button key={m.id} className={"member-chip" + (memberId === m.id ? " active" : "")} onClick={() => setMemberId(m.id)}>
@@ -89,12 +92,12 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
 
         {plan && plan.warnings && plan.warnings.length > 0 && (
           <div className="warn-box">
-            <h4>Da controllare</h4>
+            <h4>{t("Da controllare")}</h4>
             <ul>{plan.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
           </div>
         )}
 
-        {!plan && <div className="empty-note">Nessun piano generato. Premi &quot;Genera nuovo piano&quot;.</div>}
+        {!plan && <div className="empty-note">{t("Nessun piano generato. Premi \"Genera nuovo piano\".")}</div>}
 
         {plan && (
           <div className="grid-wrap">
@@ -102,10 +105,10 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
               <div className="gcell head" />
               {DAYS.map((day) => (
                 <div className="gcell head day-head" key={day}>
-                  <span>{day}</span>
+                  <span>{t(day)}</span>
                   <select className="day-swap-select" value="" onChange={(e) => { if (e.target.value) handleSwapDays(day, e.target.value); }}>
-                    <option value="">&harr; scambia</option>
-                    {DAYS.filter((d) => d !== day).map((d) => <option value={d} key={d}>{d}</option>)}
+                    <option value="">{t("↔ scambia")}</option>
+                    {DAYS.filter((d) => d !== day).map((d) => <option value={d} key={d}>{t(d)}</option>)}
                   </select>
                 </div>
               ))}
@@ -113,7 +116,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
               {mealRows.map((rowKey) => {
                 const mt = rowKey.startsWith("spuntino") ? "spuntino" : rowKey;
                 const idx = rowKey.startsWith("spuntino") ? parseInt(rowKey.replace("spuntino", ""), 10) : 0;
-                const label = mt === "spuntino" ? `Spuntino ${idx + 1}` : MEAL_LABELS[mt];
+                const label = mt === "spuntino" ? t("Spuntino {n}", { n: idx + 1 }) : t(MEAL_LABELS[mt]);
                 return (
                   <Fragment key={rowKey}>
                     <div className="gcell rowlabel">{label}</div>
@@ -128,6 +131,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
                           onReroll={handleReroll}
                           onOpenPicker={() => setPicker({ day, mt, idx })}
                           onOpenRecipe={setOpenRecipeId}
+                          t={t}
                         />
                       );
                     })}
@@ -140,18 +144,18 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
 
         {plan && (
           <div className="stat-row">
-            <Stat label="Media kcal / giorno" value={avgDaily} small={`kcal (target ${viewCalories})`} />
-            <Stat label="Pasti pianificati" value={plannedCount} small={`su ${totalSlots} totali`} />
-            <Stat label="Pasti liberi" value={freeCount} small="nella settimana" />
-            <Stat label="Pasti saltati" value={skippedCount} small="nella settimana" />
-            <Stat label="In range macro" value={plannedCount ? Math.round((inRangeCount / plannedCount) * 100) : 0} small="% dei pasti pianificati" />
+            <Stat label={t("Media kcal / giorno")} value={avgDaily} small={t("kcal (target {n})", { n: viewCalories })} />
+            <Stat label={t("Pasti pianificati")} value={plannedCount} small={t("su {n} totali", { n: totalSlots })} />
+            <Stat label={t("Pasti liberi")} value={freeCount} small={t("nella settimana")} />
+            <Stat label={t("Pasti saltati")} value={skippedCount} small={t("nella settimana")} />
+            <Stat label={t("In range macro")} value={plannedCount ? Math.round((inRangeCount / plannedCount) * 100) : 0} small={t("% dei pasti pianificati")} />
           </div>
         )}
 
         {plan && (
           <div className="table-wrap" style={{ marginTop: 20 }}>
             <table className="data">
-              <thead><tr><th>Categoria</th><th>Richieste</th><th>Pianificate</th></tr></thead>
+              <thead><tr><th>{t("Categoria")}</th><th>{t("Richieste")}</th><th>{t("Pianificate")}</th></tr></thead>
               <tbody>
                 {categories.filter((c) => c.weeklyFrequency > 0).map((c) => {
                   let count = 0;
@@ -161,7 +165,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
                     <tr key={c.id}>
                       <td><span className="hue-dot" style={{ background: hueColor(catHue, c.id, 45) }} />{c.name}</td>
                       <td className="mono">{c.weeklyFrequency}</td>
-                      <td className="mono">{count}{!ok && <span className="badge warn" style={{ marginLeft: 6 }}>scostamento</span>}</td>
+                      <td className="mono">{count}{!ok && <span className="badge warn" style={{ marginLeft: 6 }}>{t("scostamento")}</span>}</td>
                     </tr>
                   );
                 })}
@@ -172,14 +176,14 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
       </div>
 
       <div className="panel">
-        <h3>Piani precedenti</h3>
+        <h3>{t("Piani precedenti")}</h3>
         <div className="history-list">
-          {history.length === 0 && <div className="empty-note">Nessun piano precedente in questa sessione di modifiche.</div>}
+          {history.length === 0 && <div className="empty-note">{t("Nessun piano precedente in questa sessione di modifiche.")}</div>}
           {history.map((p, i) => (
             <div className="history-item" key={p.createdAt + i}>
               <span className="d">
-                {new Date(p.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}{" "}
-                &middot; {new Date(p.createdAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                {new Date(p.createdAt).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}{" "}
+                &middot; {new Date(p.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
           ))}
@@ -189,7 +193,7 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
       {picker && pickerEntry && (
         <MealPickerModal
           mt={picker.mt}
-          mealLabel={picker.mt === "spuntino" ? `Spuntino ${picker.idx + 1}` : MEAL_LABELS[picker.mt]}
+          mealLabel={picker.mt === "spuntino" ? t("Spuntino {n}", { n: picker.idx + 1 }) : t(MEAL_LABELS[picker.mt])}
           currentCategoryId={pickerEntry.categoryId}
           currentRecipeId={pickerEntry.recipeId}
           categories={categories}
@@ -197,11 +201,12 @@ export default function PlanView({ settings, categories, recipes, setRecipes, pl
           catHue={catHue}
           onPick={handlePick}
           onClose={() => setPicker(null)}
+          t={t}
         />
       )}
       {openRecipeId && (
         <RecipeDetailModal recipe={recipeById(openRecipeId)} categories={categories} groups={groups} setRecipes={setRecipes}
-          onClose={() => setOpenRecipeId(null)} />
+          onClose={() => setOpenRecipeId(null)} t={t} />
       )}
     </>
   );
@@ -216,23 +221,23 @@ function Stat({ label, value, small }) {
   );
 }
 
-function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOpenPicker, onOpenRecipe }) {
+function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOpenPicker, onOpenRecipe, t }) {
   if (!entry) return <div className="gcell meal-cell free"><span className="free-tag">&mdash;</span></div>;
-  if (entry.skipped) return <div className="gcell meal-cell skipped"><span className="free-tag">Pasto saltato</span></div>;
-  if (entry.free) return <div className="gcell meal-cell free"><span className="free-tag">Pasto libero</span></div>;
+  if (entry.skipped) return <div className="gcell meal-cell skipped"><span className="free-tag">{t("Pasto saltato")}</span></div>;
+  if (entry.free) return <div className="gcell meal-cell free"><span className="free-tag">{t("Pasto libero")}</span></div>;
 
   if (entry.unassigned) {
     return (
       <div className="gcell meal-cell">
-        <span className="badge warn">Nessuna categoria</span>
-        <div className="empty-note">Nessuna categoria assegnata a questo slot.</div>
-        <div className="cellctrl"><button className="linklike" onClick={onOpenPicker}>Selezione manuale</button></div>
+        <span className="badge warn">{t("Nessuna categoria")}</span>
+        <div className="empty-note">{t("Nessuna categoria assegnata a questo slot.")}</div>
+        <div className="cellctrl"><button className="linklike" onClick={onOpenPicker}>{t("Selezione manuale")}</button></div>
       </div>
     );
   }
 
   const cat = catById(entry.categoryId);
-  const catName = cat ? cat.name : "Categoria eliminata";
+  const catName = cat ? cat.name : t("Categoria eliminata");
   const head = (
     <div className="cat-tag"><span className="hue-dot" style={{ background: hueColor(catHue, entry.categoryId, 45) }} />{catName}</div>
   );
@@ -241,15 +246,15 @@ function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOp
     return (
       <div className="gcell meal-cell">
         {head}
-        <span className="badge warn">Nessuna ricetta</span>
-        <div className="empty-note">Aggiungi una ricetta per questa categoria e pasto.</div>
-        <div className="cellctrl"><button className="linklike" onClick={onOpenPicker}>Selezione manuale</button></div>
+        <span className="badge warn">{t("Nessuna ricetta")}</span>
+        <div className="empty-note">{t("Aggiungi una ricetta per questa categoria e pasto.")}</div>
+        <div className="cellctrl"><button className="linklike" onClick={onOpenPicker}>{t("Selezione manuale")}</button></div>
       </div>
     );
   }
 
   const recipe = recipeById(entry.recipeId);
-  const recName = recipe ? recipe.name : "Ricetta eliminata";
+  const recName = recipe ? recipe.name : t("Ricetta eliminata");
 
   return (
     <div className="gcell meal-cell">
@@ -266,10 +271,10 @@ function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOp
       )}
       <div className="kcal-line">{entry.kcal} kcal</div>
       {macroBar({ p: entry.pPct, c: entry.cPct, f: entry.fPct })}
-      <span className={"badge " + (entry.inRange ? "good" : "bad")}>{entry.inRange ? "In range" : "Fuori range"}</span>
+      <span className={"badge " + (entry.inRange ? "good" : "bad")}>{entry.inRange ? t("In range") : t("Fuori range")}</span>
       <div className="cellctrl">
-        <button className="linklike" onClick={() => onReroll(day, mt, idx)}>Nuova ricetta</button>
-        <button className="linklike" onClick={onOpenPicker}>Selezione manuale</button>
+        <button className="linklike" onClick={() => onReroll(day, mt, idx)}>{t("Nuova ricetta")}</button>
+        <button className="linklike" onClick={onOpenPicker}>{t("Selezione manuale")}</button>
       </div>
     </div>
   );

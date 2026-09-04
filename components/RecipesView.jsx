@@ -16,7 +16,7 @@ function toDraft(item) {
   };
 }
 
-export default function RecipesView({ settings, categories, recipes, setRecipes, catHue }) {
+export default function RecipesView({ settings, categories, recipes, setRecipes, catHue, t }) {
   const groups = ingredientsGrouped(categories);
   const [importInput, setImportInput] = useState("");
   const [importing, setImporting] = useState(false);
@@ -41,7 +41,7 @@ export default function RecipesView({ settings, categories, recipes, setRecipes,
 
   function addRecipe() {
     const id = "r-" + Date.now();
-    setRecipes((rs) => [...rs, { id, name: "Nuova ricetta", link: "", categoryId: categories[0] ? categories[0].id : "", meals: ["pranzo", "cena"], ingredients: [], steps: [] }]);
+    setRecipes((rs) => [...rs, { id, name: t("Nuova ricetta"), link: "", categoryId: categories[0] ? categories[0].id : "", meals: ["pranzo", "cena"], ingredients: [], steps: [] }]);
     setOpenRecipeId(id);
   }
 
@@ -58,13 +58,13 @@ export default function RecipesView({ settings, categories, recipes, setRecipes,
       });
       const data = await res.json();
       if (!res.ok) {
-        setImportError(data.error || "Importazione non riuscita.");
+        setImportError(data.error || t("Importazione non riuscita."));
         return;
       }
       startQueue([toDraft(data)]);
       setImportInput("");
     } catch {
-      setImportError("Errore di rete durante l'importazione.");
+      setImportError(t("Errore di rete durante l'importazione."));
     } finally {
       setImporting(false);
     }
@@ -89,13 +89,13 @@ export default function RecipesView({ settings, categories, recipes, setRecipes,
       });
       const data = await res.json();
       if (!res.ok) {
-        setImportError(data.error || "Importazione file non riuscita.");
+        setImportError(data.error || t("Importazione file non riuscita."));
         return;
       }
       if (data.recipes.length === 1) startQueue([toDraft(data.recipes[0])]);
       else setFileRecipes(data.recipes);
     } catch {
-      setImportError("Errore durante la lettura del file. Assicurati che sia un file di testo (.txt).");
+      setImportError(t("Errore durante la lettura del file. Assicurati che sia un file di testo (.txt)."));
     } finally {
       setImporting(false);
     }
@@ -125,31 +125,27 @@ export default function RecipesView({ settings, categories, recipes, setRecipes,
 
   return (
     <div className="panel">
-      <h3>Ricettario</h3>
+      <h3>{t("Ricettario")}</h3>
       <div className="sub">
-        Incolla il link di una ricetta, oppure il testo della ricetta copiato da qualsiasi fonte (nome + elenco
-        ingredienti), e premi Importa: provo a leggere ingredienti e pesi, poi ti chiedo nome, categoria e pasto.
-        Il link funziona sui siti che pubblicano i dati strutturati della ricetta; se un sito blocca le richieste
-        automatiche o non ha questi dati, incolla direttamente il testo, carica un file di testo (anche con più
-        ricette insieme), oppure aggiungila a mano con &quot;+ Nuova ricetta&quot; qui sotto.
+        {t("Incolla il link di una ricetta, oppure il testo della ricetta copiato da qualsiasi fonte (nome + elenco ingredienti), e premi Importa: provo a leggere ingredienti e pesi, poi ti chiedo nome, categoria e pasto. Il link funziona sui siti che pubblicano i dati strutturati della ricetta; se un sito blocca le richieste automatiche o non ha questi dati, incolla direttamente il testo, carica un file di testo (anche con più ricette insieme), oppure aggiungila a mano con \"+ Nuova ricetta\" qui sotto.")}
       </div>
 
       <div className="import-bar">
-        <textarea rows={3} placeholder={"Incolla qui il link della ricetta, oppure il testo (nome + ingredienti)…"}
+        <textarea rows={3} placeholder={t("Incolla qui il link della ricetta, oppure il testo (nome + ingredienti)…")}
           value={importInput} onChange={(e) => setImportInput(e.target.value)} />
         <button className="btn primary" onClick={handleImport} disabled={importing || !importInput.trim()}>
-          {importing ? "Importazione…" : "Importa"}
+          {importing ? t("Importazione…") : t("Importa")}
         </button>
       </div>
       <div style={{ marginBottom: 16 }}>
         <input type="file" accept=".txt,.md,text/plain" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} />
-        <button className="btn small ghost" onClick={handleFileButtonClick} disabled={importing}>Carica da file di testo…</button>
+        <button className="btn small ghost" onClick={handleFileButtonClick} disabled={importing}>{t("Carica da file di testo…")}</button>
       </div>
       {importError && (
-        <div className="warn-box"><h4>Import non riuscito</h4><ul><li>{importError}</li></ul></div>
+        <div className="warn-box"><h4>{t("Import non riuscito")}</h4><ul><li>{importError}</li></ul></div>
       )}
 
-      {recipes.length === 0 && <div className="empty-note">Nessuna ricetta ancora. Importane una dal link o aggiungine una qui sotto.</div>}
+      {recipes.length === 0 && <div className="empty-note">{t("Nessuna ricetta ancora. Importane una dal link o aggiungine una qui sotto.")}</div>}
 
       {groupedByCat.map(({ cat, items }) => (
         <div className="recipe-group" key={cat.id}>
@@ -169,7 +165,7 @@ export default function RecipesView({ settings, categories, recipes, setRecipes,
       ))}
       {orphans.length > 0 && (
         <div className="recipe-group">
-          <h4>Senza categoria valida</h4>
+          <h4>{t("Senza categoria valida")}</h4>
           <div className="recipe-name-list">
             {orphans.map((r) => (
               <button key={r.id} onClick={() => setOpenRecipeId(r.id)}>
@@ -180,18 +176,18 @@ export default function RecipesView({ settings, categories, recipes, setRecipes,
         </div>
       )}
 
-      <div style={{ marginTop: 4 }}><button className="btn small" onClick={addRecipe}>+ Nuova ricetta</button></div>
+      <div style={{ marginTop: 4 }}><button className="btn small" onClick={addRecipe}>{t("+ Nuova ricetta")}</button></div>
 
       {fileRecipes && (
-        <RecipeSelectModal recipes={fileRecipes} onContinue={handleFileSelectContinue} onClose={() => setFileRecipes(null)} />
+        <RecipeSelectModal recipes={fileRecipes} onContinue={handleFileSelectContinue} onClose={() => setFileRecipes(null)} t={t} />
       )}
       {draft && (
         <ImportRecipeModal draft={draft} setDraft={setDraft} categories={categories} groups={groups} settings={settings}
-          remainingCount={queue.length} onConfirm={handleConfirmImport} onClose={advance} />
+          remainingCount={queue.length} onConfirm={handleConfirmImport} onClose={advance} t={t} />
       )}
       {openRecipe && (
         <RecipeDetailModal recipe={openRecipe} categories={categories} groups={groups} setRecipes={setRecipes}
-          onClose={() => setOpenRecipeId(null)} />
+          onClose={() => setOpenRecipeId(null)} t={t} />
       )}
     </div>
   );

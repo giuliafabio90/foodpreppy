@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 // Bottone "Elimina" con conferma inline a due click, senza usare la
 // window.confirm() nativa: primo click arma ("Confermi?"), secondo click
 // entro 4s conferma, un click altrove o il timeout annulla.
-export default function ConfirmButton({ onConfirm, children = "Elimina", className = "linklike" }) {
+export default function ConfirmButton({ onConfirm, children, className = "linklike", t = (s) => s }) {
+  const label = children === undefined ? t("Elimina") : children;
   const [armed, setArmed] = useState(false);
   const timeoutRef = useRef(null);
 
@@ -37,7 +38,7 @@ export default function ConfirmButton({ onConfirm, children = "Elimina", classNa
       className={className + (armed ? " confirm-armed" : "")}
       onClick={handleClick}
     >
-      {armed ? "Confermi?" : children}
+      {armed ? t("Confermi?") : label}
     </button>
   );
 }
