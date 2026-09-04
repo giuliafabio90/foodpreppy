@@ -73,7 +73,7 @@ export default function App() {
         {tab === "settings" && <SettingsView settings={settings} setSettings={setSettings} />}
         {tab === "categories" && <CategoriesView categories={categories} setCategories={setCategories} catHue={catHue} />}
         {tab === "macros" && <MacrosView settings={settings} setSettings={setSettings} />}
-        {tab === "recipes" && <RecipesView categories={categories} recipes={recipes} setRecipes={setRecipes} />}
+        {tab === "recipes" && <RecipesView settings={settings} categories={categories} recipes={recipes} setRecipes={setRecipes} />}
         {tab === "plan" && (
           <PlanView
             settings={settings} categories={categories} recipes={recipes}
