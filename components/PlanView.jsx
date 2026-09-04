@@ -1,7 +1,8 @@
 "use client";
 import { Fragment, useState } from "react";
-import { DAYS, MEAL_LABELS, hueColor, rerollMeal, selectMealRecipe, swapDays } from "../lib/data";
+import { DAYS, MEAL_LABELS, hueColor, rerollMeal, selectMealRecipe, swapDays, ingredientsGrouped } from "../lib/data";
 import MealPickerModal from "./MealPickerModal";
+import RecipeDetailModal from "./RecipeDetailModal";
 
 function macroBar(pct) {
   return (
@@ -13,8 +14,10 @@ function macroBar(pct) {
   );
 }
 
-export default function PlanView({ settings, categories, recipes, plan, setPlan, history, catHue, onRegenerate }) {
+export default function PlanView({ settings, categories, recipes, setRecipes, plan, setPlan, history, catHue, onRegenerate, onSaveToHistory }) {
   const [picker, setPicker] = useState(null); // {day, mt, idx} | null
+  const [openRecipeId, setOpenRecipeId] = useState(null);
+  const groups = ingredientsGrouped(categories);
 
   function catById(id) { return categories.find((c) => c.id === id); }
   function recipeById(id) { return recipes.find((r) => r.id === id); }
@@ -54,6 +57,8 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
       <div className="panel">
         <div className="plan-actions">
           <button className="btn primary" onClick={onRegenerate}>Genera nuovo piano</button>
+          <button className="btn ghost" disabled={!plan} onClick={onSaveToHistory}>Salva piano</button>
+          <button className="btn ghost" disabled={!plan} onClick={() => window.print()}>Stampa</button>
           {plan && plan.createdAt && (
             <span className="plan-meta">
               Generato il {new Date(plan.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}{" "}
@@ -102,6 +107,7 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
                           catById={catById} recipeById={recipeById} catHue={catHue}
                           onReroll={handleReroll}
                           onOpenPicker={() => setPicker({ day, mt, idx })}
+                          onOpenRecipe={setOpenRecipeId}
                         />
                       );
                     })}
@@ -173,6 +179,10 @@ export default function PlanView({ settings, categories, recipes, plan, setPlan,
           onClose={() => setPicker(null)}
         />
       )}
+      {openRecipeId && (
+        <RecipeDetailModal recipe={recipeById(openRecipeId)} categories={categories} groups={groups} setRecipes={setRecipes}
+          onClose={() => setOpenRecipeId(null)} />
+      )}
     </>
   );
 }
@@ -186,7 +196,7 @@ function Stat({ label, value, small }) {
   );
 }
 
-function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOpenPicker }) {
+function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOpenPicker, onOpenRecipe }) {
   if (!entry) return <div className="gcell meal-cell free"><span className="free-tag">&mdash;</span></div>;
   if (entry.skipped) return <div className="gcell meal-cell skipped"><span className="free-tag">Pasto saltato</span></div>;
   if (entry.free) return <div className="gcell meal-cell free"><span className="free-tag">Pasto libero</span></div>;
@@ -225,7 +235,7 @@ function Cell({ day, mt, idx, entry, catById, recipeById, catHue, onReroll, onOp
     <div className="gcell meal-cell">
       {head}
       <div className="recipe-name">
-        {recipe && recipe.link ? <a href={recipe.link} target="_blank" rel="noopener noreferrer">{recName}</a> : recName}
+        {recipe ? <button className="linklike recipe-name-btn" onClick={() => onOpenRecipe(recipe.id)}>{recName}</button> : recName}
       </div>
       {entry.ingredients && entry.ingredients.length > 0 && (
         <ul className="ing-mini">

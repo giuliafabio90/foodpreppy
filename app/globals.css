@@ -90,6 +90,16 @@ main{ padding:28px 32px 60px; max-width:1180px; }
 .topbar h2{ font-size:26px; }
 .savestate{ font:500 12px "IBM Plex Mono",monospace; color:var(--ink-faint); display:flex; align-items:center; gap:6px; }
 .savestate .dot{ width:7px; height:7px; border-radius:50%; background:var(--good); }
+.savestate .dot.error{ background:var(--bad); }
+.savestate .linklike{ margin-left:4px; }
+
+.signin-screen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.signin-card{ max-width:380px; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-m); padding:36px 32px; box-shadow:var(--shadow); }
+.signin-card .kicker{ font:600 11px "IBM Plex Mono",monospace; letter-spacing:.14em; color:var(--ink-faint); text-transform:uppercase; }
+.signin-card h1{ font-size:26px; margin-top:8px; line-height:1.05; }
+.signin-card .sub{ max-width:none; margin:16px 0 22px; }
+.signin-card .btn{ width:100%; }
+.signin-error{ font:600 12.5px "Public Sans",sans-serif; color:var(--bad); background:var(--bad-soft); border-radius:6px; padding:8px 10px; }
 
 .panel{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-m); padding:20px 22px; box-shadow:var(--shadow); margin-bottom:20px; }
 .panel h3{ font-size:17px; margin-bottom:4px; }
@@ -98,9 +108,10 @@ main{ padding:28px 32px 60px; max-width:1180px; }
 .field-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; }
 label.field{ display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--ink-dim); font-weight:600; }
 label.field span{ letter-spacing:.02em; }
-input[type=number], input[type=text], input[type=url]{
+input[type=number], input[type=text], input[type=url], input[type=email], input[type=password], textarea{
   border:1px solid var(--border); border-radius:var(--radius-s); background:var(--bg); color:var(--ink); padding:8px 10px; font-size:14px; width:100%;
 }
+textarea{ font-family:inherit; resize:vertical; }
 input:focus-visible, select:focus-visible, button:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 .suffix-wrap{ position:relative; }
 .suffix-wrap input{ padding-right:34px; }
@@ -232,8 +243,9 @@ table.data input.narrow{ width:56px; min-width:56px; }
 .bar-slot{ flex:1; max-width:220px; min-width:120px; }
 .rc-summary .totals{ font:600 12px "IBM Plex Mono",monospace; color:var(--ink-dim); }
 
-.import-bar{ display:flex; gap:10px; margin-bottom:16px; }
-.import-bar input{ flex:1; }
+.import-bar{ display:flex; gap:10px; margin-bottom:16px; align-items:flex-end; }
+.import-bar textarea{ flex:1; resize:vertical; min-height:44px; font:inherit; border:1px solid var(--border); border-radius:var(--radius-s); background:var(--bg); color:var(--ink); padding:8px 10px; }
+.import-bar button{ flex:0 0 auto; }
 
 .ing-row-unmatched select{ border-color:var(--warn); }
 
@@ -250,3 +262,32 @@ table.data input.narrow{ width:56px; min-width:56px; }
 .picker-list button.current{ color:var(--accent); }
 .picker-list button.current::after{ content:"selezionata"; margin-left:auto; font:600 10px "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); }
 .picker-cat-tag{ margin-left:8px; font:500 11px "IBM Plex Mono",monospace; color:var(--ink-faint); }
+
+.steps-list{ margin:0 0 16px; padding-left:22px; color:var(--ink-dim); font-size:13px; line-height:1.6; }
+.steps-list li{ margin-bottom:6px; }
+
+.recipe-group{ margin-bottom:18px; }
+.recipe-group h4{ display:flex; align-items:center; font:700 12px "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-dim); margin-bottom:8px; }
+.recipe-name-list{ display:flex; flex-direction:column; border:1px solid var(--border); border-radius:var(--radius-s); overflow:hidden; }
+.recipe-name-list button{ display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--surface); border:none; border-bottom:1px solid var(--border); padding:10px 14px; font:600 14px "Public Sans",sans-serif; color:var(--ink); cursor:pointer; }
+.recipe-name-list button:last-child{ border-bottom:none; }
+.recipe-name-list button:hover{ background:var(--accent-soft); }
+.recipe-name-list .kcal-hint{ font:500 12px "IBM Plex Mono",monospace; color:var(--ink-faint); flex-shrink:0; }
+
+@media print{
+  @page{ size:landscape; margin:12mm; }
+  body{ background:#fff; }
+  .tabs, .topbar .savestate, .plan-actions, .day-swap-select, .cellctrl,
+  .import-bar, .warn-box, .stat-row, .history-list,
+  .modal-actions, textarea, .ing-table th:last-child, .ing-table td:last-child { display:none !important; }
+  .app{ display:block; }
+  main{ padding:0; max-width:none; }
+  .panel{ box-shadow:none; border:none; padding:0; margin-bottom:14px; }
+  .grid-wrap{ overflow:visible; }
+  .week-grid{ min-width:0; }
+  .gcell{ break-inside:avoid; }
+  .modal-overlay{ position:static; background:none; padding:0; display:block; }
+  .modal-card{ box-shadow:none; border:none; max-width:none; padding:0; }
+  input, select{ border:none !important; background:none !important; padding:2px 0 !important; }
+  .steps-list{ display:block !important; }
+}

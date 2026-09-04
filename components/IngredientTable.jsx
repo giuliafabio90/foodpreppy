@@ -3,8 +3,10 @@ import { INGREDIENT_DB, round1 } from "../lib/data";
 
 // Tabella ingredienti riusata sia nella scheda ricetta (modifica manuale)
 // sia nel popup di revisione import: select alimento + peso in grammi,
-// con calorie/macro calcolate live.
-export default function IngredientTable({ ingredients, groups, onChange, showSource = false }) {
+// con calorie/macro calcolate live. La spunta "Fisso" marca un ingrediente
+// da NON toccare quando si ricalibra la porzione: il ricalcolo scala solo
+// gli ingredienti non fissi per centrare il target calorico.
+export default function IngredientTable({ ingredients, groups, onChange, showSource = false, showLock = false }) {
   function update(idx, patch) {
     onChange(ingredients.map((ing, i) => (i === idx ? { ...ing, ...patch } : ing)));
   }
@@ -15,7 +17,7 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
     onChange([...ingredients, { ingredientId: "", grams: 100 }]);
   }
 
-  const colSpan = showSource ? 8 : 7;
+  const colSpan = 7 + (showSource ? 1 : 0) + (showLock ? 1 : 0);
 
   return (
     <div className="rc-ingredients">
@@ -24,7 +26,9 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
           <thead>
             <tr>
               {showSource && <th>Testo letto dal sito</th>}
-              <th>Ingrediente</th><th>Peso (g)</th><th>Kcal</th><th>Prot g</th><th>Carb g</th><th>Grassi g</th><th />
+              <th>Ingrediente</th><th>Peso (g)</th><th>Kcal</th><th>Prot g</th><th>Carb g</th><th>Grassi g</th>
+              {showLock && <th title="Non scalare questo ingrediente quando si ricalibra">Fisso</th>}
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -48,12 +52,18 @@ export default function IngredientTable({ ingredients, groups, onChange, showSou
                       ))}
                     </select>
                   </td>
-                  <td><input type="number" min="0" step="5" value={ing.grams}
+                  <td><input type="number" min="0" step="5" value={ing.grams} disabled={showLock && !!ing.locked}
                     onChange={(e) => update(idx, { grams: Math.max(0, parseFloat(e.target.value) || 0) })} /></td>
                   <td className="mono">{def ? round1(def.kcal100 * f) : 0}</td>
                   <td className="mono">{def ? round1(def.protein100 * f) : 0}</td>
                   <td className="mono">{def ? round1(def.carbs100 * f) : 0}</td>
                   <td className="mono">{def ? round1(def.fat100 * f) : 0}</td>
+                  {showLock && (
+                    <td style={{ textAlign: "center" }}>
+                      <input type="checkbox" checked={!!ing.locked} title="Mantieni fisso in fase di ricalibro"
+                        onChange={(e) => update(idx, { locked: e.target.checked })} />
+                    </td>
+                  )}
                   <td><button className="linklike" onClick={() => remove(idx)}>&times;</button></td>
                 </tr>
               );

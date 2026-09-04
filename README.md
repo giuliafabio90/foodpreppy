@@ -5,35 +5,33 @@ alimentare, range macro per pasto e ricette a ingredienti; l'app genera uno
 schema settimanale casuale, ricalibrando i pesi degli ingredienti di ogni
 ricetta per centrare il target calorico del pasto.
 
-I dati (impostazioni, categorie, ricette, piano) sono salvati nel
-**localStorage del browser**: restano su questo dispositivo/browser, nessun
-database o account richiesto.
+Login con email e password; i dati (impostazioni, categorie, ricette, piano)
+sono salvati su un database Postgres (Neon), un blob per account: li ritrovi
+ad ogni accesso, da qualsiasi dispositivo.
 
 ## Sviluppo locale
 
 ```bash
 npm install
+vercel env pull .env.local   # scarica AUTH_SECRET e DATABASE_URL dal progetto Vercel
 npm run dev
 ```
 
 Apri http://localhost:3000.
 
-## Deploy su Vercel
+## Infrastruttura
 
-1. Crea un repository vuoto su GitHub (senza README, senza `.gitignore` — li ha gia il progetto).
-2. Collega il repo locale e pusha:
-   ```bash
-   git remote add origin <URL_DEL_TUO_REPO>
-   git branch -M main
-   git push -u origin main
-   ```
-3. Vai su [vercel.com](https://vercel.com), accedi con GitHub, "Add New… → Project", seleziona questo repository e clicca **Deploy** (Next.js viene rilevato in automatico, nessuna configurazione necessaria: non ci sono variabili d'ambiente).
+- **Autenticazione**: Auth.js (next-auth v5), provider Credentials (email + password con hash bcrypt). Config in `auth.js`, registrazione in `app/api/auth/register/route.js`.
+- **Database**: Postgres via Neon (integrazione nativa Vercel, variabile `DATABASE_URL`). Due tabelle: `users` (account) e `user_data` (un JSONB per utente con tutto lo stato dell'app). Client in `lib/db.js`.
+- **Import ricette**: `app/api/import-recipe/route.js` (link o testo incollato) e `app/api/import-recipe-file/route.js` (file di testo con una o più ricette). Parsing in `lib/importParse.js`.
 
-Ogni push su `main` ripubblica automaticamente il sito.
+## Deploy
+
+Push su `main` e `vercel --prod` (o collegamento Git → deploy automatico se il repository è connesso correttamente al progetto Vercel).
 
 ## Struttura
 
 - `lib/data.js` — costanti (categorie di default, database nutrizionale, range macro) e logica pura di generazione del piano.
-- `lib/storage.js` — lettura/scrittura localStorage.
-- `components/App.jsx` — stato dell'app e navigazione a schede.
-- `components/*View.jsx` — le cinque schede (Impostazioni, Categorie, Macro per pasto, Ricette, Piano settimanale).
+- `auth.js`, `lib/db.js` — autenticazione e persistenza server-side.
+- `components/App.jsx` — gate di login + stato dell'app + navigazione a schede.
+- `components/*View.jsx`, `components/*Modal.jsx` — le cinque schede e i popup (import, dettaglio ricetta, selezione manuale, selezione file).
